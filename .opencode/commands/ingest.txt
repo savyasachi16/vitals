@@ -1,0 +1,10 @@
+Ingest new Apple Health data from export.xml.
+
+Steps:
+1. Verify export.xml path: $ARGUMENTS (default: /Users/savya/Downloads/apple_health_export/export.xml)
+2. Run: node scripts/parse-health-xml.js $ARGUMENTS
+3. Run: node scripts/generate-json.js
+4. Verify: ls -lh public/data-*.json
+5. Restart dev server if running
+
+Report record count and file sizes when done.

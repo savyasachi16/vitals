@@ -1,0 +1,14 @@
+Add a new health metric to the dashboard.
+
+Metric to add: $ARGUMENTS (e.g., "blood oxygen", "vo2max", "body temperature")
+
+Steps:
+1. Find HealthKit identifier: HKQuantityTypeIdentifier<Name>
+2. Choose color from Apple Health palette (Green #30D158, Red #FF375F, Orange #FF9F0A, Blue #0A84FF, Purple #BF5AF2)
+3. Determine aggregation: SUM (cumulative) or AVG (measurements)
+4. Add to METRICS array in src/types/health.ts
+5. Add <HealthChart client:load /> to src/pages/index.astro
+6. Run: node scripts/generate-json.js
+7. Verify: ls -lh public/data-*.json
+
+Tell user which file was modified and which color was chosen.

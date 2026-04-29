@@ -10,6 +10,7 @@ Repo: github.com/savyasachi16/vitals
 - Tailwind CSS v4 — via `@tailwindcss/vite` (NOT `@astrojs/tailwind`)
 - React + Recharts — interactive health charts via `@astrojs/react`
 - TypeScript strict — types in `src/types/`
+- SQLite — local-first ingestion, never committed
 
 ## Design system
 
@@ -25,46 +26,83 @@ Repo: github.com/savyasachi16/vitals
 ```
 src/
   components/
-    HealthChart.tsx      — Recharts wrapper for time-series data
-    MetricCard.astro    — Apple-style metric summary cards
-    TimeRangeSelector.tsx — Day/Week/Month/Year toggle
+    HealthChart.tsx          — Recharts area chart with 7d/30d/365d/all toggles
+    TimeRangeSelector.tsx    — Time range selector buttons
   layouts/
-    Layout.astro        — Base HTML wrapper with global CSS import
+    Layout.astro             — Base HTML wrapper with global CSS import
   pages/
-    index.astro         — Main dashboard page
+    index.astro              — Main dashboard page (client:load for React)
   styles/
-    global.css          — Apple Health dark mode theme + card styles
+    global.css               — Apple Health dark mode theme via @theme
   types/
-    health.ts           — TypeScript interfaces for HealthKit data
+    health.ts                — TypeScript interfaces for HealthKit data
 scripts/
-  parse-health-xml.js   — Node script to convert Apple Health export.xml → health-data.json
-docs/
-  export.md            — iPhone export instructions
+  parse-health-xml.js        — Stream 1.36GB export.xml → SQLite (366MB health.db)
+  generate-json.js           — SQLite → per-metric JSON files in public/data-*.json
 public/
-  health-data.json      — Parsed health data (gitignored, privacy)
-  favicon.svg          — Apple Health-style icon
+  data-*.json                — Generated chart data (gitignored, privacy)
+  workouts.json              — Workout list from SQLite
+  health-stats.json          — Summary stats
+  favicon.svg                — Apple Health-style icon
 ```
 
-## How to Ingest New Health Data
+## How to Import Data
 
-1. **Export from iPhone**: Health app → Profile icon → Export All Health Data → Save to Files
-2. **Transfer to Mac**: AirDrop or iCloud Drive
-3. **Extract**: Unzip `health-records.zip` to get `export.xml`
-4. **Parse**: `node scripts/parse-health-xml.js path/to/export.xml`
-5. **Result**: Updates `public/health-data.json` — dashboard auto-refreshes
+### One-time setup
+```bash
+# 1. Export from iPhone: Health app → Profile → Export All Health Data → Save to Files
+# 2. Transfer export.xml to your Mac (AirDrop/iCloud)
+# 3. Place export.xml in project root
+```
+
+### Ingest pipeline (two steps)
+```bash
+# Step 1: Parse XML → SQLite (handles 1.36GB, 3.68M records)
+node scripts/parse-health-xml.js export.xml
+
+# Step 2: Generate static JSON for dashboard
+node scripts/generate-json.js
+```
+
+### What happens
+1. `parse-health-xml.js` streams `export.xml` line-by-line → `health.db` (SQLite)
+   - Records table: type, value, unit, startDate, endDate, sourceName, device, UUID
+   - Workouts table: type, duration, startDate, endDate, sourceName, stats
+   - Sleep: calculated as duration hours from start/end dates
+2. `generate-json.js` reads SQLite → per-metric JSON files in `public/`
+   - Aggregation: SUM for steps/calories, AVG for HR/weight, duration for sleep
+   - Output: `data-stepcount.json`, `data-heartrate.json`, etc.
+3. Dashboard reads JSON files at build time (static site, Vercel-compatible)
+
+### Refresh data
+Repeat the two steps with a new `export.xml`. No git commits needed — data stays local.
+
+## Dev commands
+
+```bash
+npm run dev      # localhost:4321 — HMR enabled
+npm run build    # production build → dist/ + .vercel/output/
+```
+
+## Data Privacy Rules
+
+- **Never commit health data**: `export.xml`, `health.db`, `public/data-*.json` all gitignored
+- **Never hardcode personal values**: Real data stays local, repo has no sample data
+- **Parse scripts are local-only**: No network calls, runs entirely on user's machine
+- **SQLite DB is 366MB**: Too large for GitHub (100MB limit) — this is why it's gitignored
 
 ## Common tasks
 
 ### Add a new metric to dashboard
 1. Add config to `METRICS` array in `src/types/health.ts`
-2. Add `<HealthChart />` component to `src/pages/index.astro`
-3. For summary cards, add `<MetricCard />` in appropriate section
+2. Add `<HealthChart client:load />` component to `src/pages/index.astro`
+3. Run `node scripts/generate-json.js` to generate the new metric's JSON
 
 ### Update chart colors or styling
-Edit the Apple Health palette CSS variables in `src/styles/global.css`
+Edit the Apple Health palette CSS variables in `src/styles/global.css` via `@theme` block
 
 ### Change time range defaults
-Update `useState<TimeRange>('month')` in `src/components/HealthChart.tsx` and `TimeRangeSelector.tsx`
+Update `useState<TimeRange>('30d')` in `src/components/HealthChart.tsx` (valid: `7d`, `30d`, `365d`, `all`)
 
 ### Deploy to Vercel
 ```bash
@@ -72,30 +110,14 @@ npm run build  # outputs to dist/ and .vercel/output/
 vercel --prod
 ```
 
-## Data Privacy Rules
-
-- **Never commit health data**: `export.xml`, `public/health-data.json` are in `.gitignore`
-- **Never hardcode personal values**: Use sample data in `public/health-data.json` for development
-- **Parse script is local-only**: No network calls, runs entirely on user's machine
-
 ## Apple Health XML Format
 
-The export.xml contains:
+The `export.xml` contains:
 - `<Record type="HKQuantityTypeIdentifier..." value="..." startDate="..." endDate="..." sourceName="..." />`
 - `<Workout workoutActivityType="..." duration="..." startDate="..." endDate="..." />`
+- `<SleepAnalysis ... />` — sleep data parsed as duration between start/end dates
 
-Parse script handles both record types and outputs clean JSON.
-
-## Dev commands
-
-```bash
-npm run dev      # localhost:4321 — HMR enabled
-npm run build    # production build → dist/ + .vercel/output/
-npm run preview  # NOT recommended with Vercel adapter
-```
-
-### Local preview
-Use `npm run dev` for all local work. The Vercel adapter changes output structure.
+Parse script handles all record types and outputs clean SQLite tables.
 
 ## Critical rules
 
@@ -104,22 +126,13 @@ Use `npm run dev` for all local work. The Vercel adapter changes output structur
 - **No emojis in UI** unless explicitly asked (icons in code OK)
 - **Sample data only in repo** — real data stays local on user's machine
 - **Match Apple Health styling** — cards, spacing, typography must feel native
+- **health.db is 366MB** — never try to push to GitHub, it's in .gitignore for a reason
+- **Sleep values**: stored as decimal hours in DB (6.57 = 6h 34m), displayed as `Xh Ym`
 
-## Parse Script Usage
+## Key files for context
 
-```bash
-# Basic usage
-node scripts/parse-health-xml.js export.xml
-
-# With custom output path
-node scripts/parse-health-xml.js ~/Downloads/export.xml
-```
-
-Output: `public/health-data.json` with structure:
-```json
-{
-  "records": [{ "type": "...", "value": 123, "unit": "...", "startDate": "...", "endDate": "...", "source": "..." }],
-  "lastUpdated": "2026-04-28T10:00:00-07:00",
-  "stats": { "totalRecords": 12345, "dateRange": {...}, "types": [...] }
-}
-```
+- `scripts/parse-health-xml.js:1` — streaming XML parser (line-by-line, handles 1.36GB)
+- `scripts/generate-json.js:1` — SQLite to JSON generator with proper aggregation
+- `src/components/HealthChart.tsx:1` — Recharts area chart with time range toggles
+- `src/styles/global.css:1` — Apple Health dark mode theme with Tailwind v4 `@theme`
+- `src/types/health.ts:1` — TypeScript interfaces and METRICS config array
