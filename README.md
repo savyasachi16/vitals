@@ -2,7 +2,16 @@
 
 My Apple Health data, as a dashboard. Astro + React + Recharts, SQLite for ingestion, dark mode only because I don't use Health in light mode.
 
-**Live:** https://vitals.savyasachi.dev (planned)
+## Stack
+
+<a href="https://astro.build"><img src="https://img.shields.io/badge/Astro-FF5D01?style=flat&logo=astro&logoColor=white" alt="Astro" /></a>
+<a href="https://react.dev"><img src="https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=000" alt="React" /></a>
+<a href="https://recharts.org"><img src="https://img.shields.io/badge/Recharts-22B5BF?style=flat&logo=chartdotjs&logoColor=white" alt="Recharts" /></a>
+<a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
+<a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+<a href="https://www.sqlite.org"><img src="https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white" alt="SQLite" /></a>
+<a href="https://vitest.dev"><img src="https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white" alt="Vitest" /></a>
+<a href="https://vercel.com"><img src="https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white" alt="Vercel" /></a>
 
 ## Use it on your own data
 
