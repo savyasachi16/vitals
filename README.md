@@ -1,140 +1,38 @@
 # vitals
 
-Apple Health dashboard with native iOS Health app styling. Built with Astro 6, Tailwind CSS v4, and Recharts.
+My Apple Health data, as a dashboard. Astro + React + Recharts, SQLite for ingestion, dark mode only because I don't use Health in light mode.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/savyasachi16/vitals)
+**Live:** https://vitals.savyasachi.dev (planned)
 
-## Features
+## Use it on your own data
 
-- **Dark mode only** — matches Apple Health app aesthetic (bg `#000`, surface `#1C1C1E`)
-- **SQLite pipeline** — streams 1.36GB `export.xml` → SQLite → per-metric JSON
-- **Interactive charts** — Recharts area charts with 7d/30d/365d/all time ranges
-- **Privacy-first** — all processing local, health data never leaves your machine
-- **Vercel-ready** — static build, no server-side DB queries
-
-## Quick Start
-
-### 1. Clone & Install
 ```bash
-git clone https://github.com/savyasachi16/vitals.git
-cd vitals
 npm install
-```
-
-### 2. Export Health Data from iPhone
-1. Health app → Profile → Export All Health Data → Save to Files
-2. Transfer `export.xml` to your Mac (AirDrop/iCloud)
-3. Place in project root
-
-### 3. Ingest Data
-```bash
-# Parse XML → SQLite
-node scripts/parse-health-xml.js export.xml
-
-# Generate static JSON
-node scripts/generate-json.js
-```
-
-### 4. Run Dashboard
-```bash
+# Health app → Profile → Export All Health Data → drop export.xml in repo root
+npm run ingest export.xml
 npm run dev
-# Opens http://localhost:4321/
 ```
 
-## Data Pipeline
+Re-runs are incremental. `npm run ingest:fresh` rebuilds from scratch.
 
-```
-export.xml (1.36GB)
-    ↓
-parse-health-xml.js (streaming line-by-line)
-    ↓
-health.db (SQLite, 366MB, 3.68M records)
-    ↓
-generate-json.js (aggregation: SUM/AVG)
-    ↓
-public/data-*.json (<300KB each)
-    ↓
-Dashboard (static, Vercel-compatible)
-```
+## Layout
 
-### Aggregation Rules
-- **SUM**: Steps, active/basal energy (cumulative metrics)
-- **AVG**: Heart rate, weight, body fat % (measurements)
-- **Duration**: Sleep analysis (displayed as `Xh Ym`)
+- `src/lib/timeRange.ts` — shared time-range store, URL-synced via `?range=`
+- `src/components/HealthChart.tsx` — one Recharts area chart per metric
+- `scripts/parse-health-xml.js` — streams `export.xml` into SQLite
+- `scripts/generate-json.js` — emits one daily series per metric to `public/data-*.json`
+- `scripts/lib/aggregate.js` — `SUM_TYPES`, `DEFAULT_METRICS`, the SUM/AVG logic
 
-## AI-Native Development
+## Add a metric
 
-This repo includes native configs for:
-- **Claude Code** — `CLAUDE.md` + `.claude/skills/` + `.claude/commands/`
-- **OpenCode** — `OPENCODE.md` + `.opencode/skills/` + `.opencode/commands/`
-
-### Available Skills
-| Skill | Description |
-|-------|-------------|
-| `ingest` | Full pipeline: export.xml → SQLite → JSON |
-| `add-metric` | Add new health metric to dashboard |
-| `deploy` | Deploy to Vercel |
-
-### Slash Commands
-```bash
-# Claude Code
-/claude-ingest /path/to/export.xml
-/claude-add-metric "blood oxygen"
-
-# OpenCode
-/opencode-ingest /path/to/export.xml
-/opencode-add-metric "blood oxygen"
-```
-
-## Tech Stack
-
-- **Astro 6** — static site generator
-- **Tailwind CSS v4** — via `@tailwindcss/vite`
-- **React + Recharts** — interactive charts
-- **SQLite** — local-first data ingestion
-- **TypeScript** — strict mode
+Append the `HK*` identifier to `DEFAULT_METRICS` in `scripts/lib/aggregate.js`. If it's cumulative (steps, calories, distance), add it to `SUM_TYPES` too. Drop a `<HealthChart />` in `src/pages/index.astro`. Re-run ingest.
 
 ## Privacy
 
-- ✅ `export.xml`, `health.db`, `public/data-*.json` all gitignored
-- ✅ No network calls in parse scripts
-- ✅ All processing happens on your machine
-- ✅ Dashboard reads static JSON (no runtime DB)
+`export.xml`, `health.db`, and the generated JSON are gitignored. A husky pre-commit hook fails the commit if any of them get staged. The parse scripts make no network calls.
 
-## Available Metrics
+## Scripts
 
-| Metric | Identifier | Aggregation |
-|--------|-------------|-------------|
-| Steps | `HKQuantityTypeIdentifierStepCount` | SUM |
-| Heart Rate | `HKQuantityTypeIdentifierHeartRate` | AVG |
-| Resting HR | `HKQuantityTypeIdentifierRestingHeartRate` | AVG |
-| Active Energy | `HKQuantityTypeIdentifierActiveEnergyBurned` | SUM |
-| Basal Energy | `HKQuantityTypeIdentifierBasalEnergyBurned` | SUM |
-| Sleep | `HKCategoryTypeIdentifierSleepAnalysis` | Duration |
-| Weight | `HKQuantityTypeIdentifierBodyMass` | AVG |
-| Body Fat % | `HKQuantityTypeIdentifierBodyFatPercentage` | AVG |
-| Lean Mass | `HKQuantityTypeIdentifierLeanBodyMass` | AVG |
-| VO2 Max | `HKQuantityTypeIdentifierVO2Max` | AVG |
+`dev` · `build` · `test` · `ingest <file>` · `ingest:fresh`
 
-## Deploy to Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/savyasachi16/vitals)
-
-Or manually:
-```bash
-npm run build
-vercel --prod
-```
-
-Set environment variables in Vercel dashboard:
-- `VERCEL_TOKEN` — from https://vercel.com/account/tokens
-- `VERCEL_ORG_ID` — from Vercel project settings
-- `VERCEL_PROJECT_ID` — from Vercel project settings
-
-## License
-
-MIT — feel free to fork and adapt for your own health data.
-
----
-
-**Note**: This dashboard requires your personal Apple Health export. No data is included in the repo.
+MIT.

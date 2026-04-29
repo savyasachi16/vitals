@@ -1,60 +1,59 @@
-import { useState, useEffect } from 'react';
-import type { TimeRange } from '../types/health';
+import { useEffect, useState } from 'react';
+import { useTimeRange } from '../hooks/useTimeRange';
+import { RANGES, type TimeRange } from '../lib/timeRange';
 
-interface TimeRangeSelectorProps {
-  onChange?: (range: TimeRange) => void;
+interface DateRange {
+  start: string | null;
+  end: string | null;
 }
 
-export default function TimeRangeSelector({ onChange }: TimeRangeSelectorProps) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('month');
-  const [stats, setStats] = useState<{ start: string | null; end: string | null } | null>(null);
+export default function TimeRangeSelector() {
+  const [range, setRange] = useTimeRange();
+  const [stats, setStats] = useState<DateRange | null>(null);
 
   useEffect(() => {
     fetch('/health-stats.json')
-      .then(res => res.json())
-      .then(data => {
-        setStats(data.dateRange);
-      })
+      .then((r) => r.json())
+      .then((data) => setStats(data.dateRange))
       .catch(() => {});
   }, []);
 
-  const handleChange = (range: TimeRange) => {
-    setTimeRange(range);
-    onChange?.(range);
-  };
-
   return (
     <div className="health-card mb-6">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>Health Summary</h2>
-          {stats && (
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
-              {new Date(stats.start).toLocaleDateString()} to {new Date(stats.end).toLocaleDateString()}
+          <h2 className="m-0 text-[28px] font-bold tracking-tight">Health Summary</h2>
+          {stats?.start && stats?.end && (
+            <p className="m-0 mt-1 text-[13px] text-(--color-text-tertiary)">
+              {new Date(stats.start).toLocaleDateString()} → {new Date(stats.end).toLocaleDateString()}
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '4px', background: 'var(--color-surface-secondary)', borderRadius: '10px', padding: '4px' }}>
-          {(['7d', '30d', '365d', 'all'] as const).map(range => (
-            <button
-              key={range}
-              onClick={() => handleChange(range)}
-              style={{
-                padding: '6px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                background: timeRange === range ? 'var(--color-bg)' : 'transparent',
-                color: timeRange === range ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                boxShadow: timeRange === range ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-              }}
-            >
-              {range}
-            </button>
-          ))}
+        <div
+          role="radiogroup"
+          aria-label="Select time range"
+          className="flex gap-1 rounded-[10px] bg-(--color-surface-secondary) p-1"
+        >
+          {RANGES.map((r) => {
+            const active = range === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setRange(r as TimeRange)}
+                className={[
+                  'rounded-lg border-0 px-4 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+                  active
+                    ? 'bg-(--color-bg) text-(--color-text-primary) shadow'
+                    : 'bg-transparent text-(--color-text-secondary) hover:text-(--color-text-primary)',
+                ].join(' ')}
+              >
+                {r}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -2,9 +2,12 @@ import fs from 'fs';
 import readline from 'readline';
 import Database from 'better-sqlite3';
 
-// Usage: node scripts/parse-health-xml.js [path-to-export.xml]
+// Usage: node scripts/parse-health-xml.js [path-to-export.xml] [--fresh]
 async function main() {
-  const xmlPath = process.argv[2] || '/Users/savya/Downloads/apple_health_export/export.xml';
+  const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const flags = new Set(process.argv.slice(2).filter((a) => a.startsWith('--')));
+  const fresh = flags.has('--fresh');
+  const xmlPath = args[0] || '/Users/savya/Downloads/apple_health_export/export.xml';
   const dbPath = 'health.db';
 
   if (!fs.existsSync(xmlPath)) {
@@ -15,17 +18,21 @@ async function main() {
   const stats = fs.statSync(xmlPath);
   console.log(`Parsing ${xmlPath} (${(stats.size / 1024 / 1024 / 1024).toFixed(2)} GB)...`);
 
-  // Remove existing DB
-  if (fs.existsSync(dbPath)) {
+  const dbExists = fs.existsSync(dbPath);
+  if (fresh && dbExists) {
     fs.unlinkSync(dbPath);
-    console.log(`Removed existing ${dbPath}`);
+    console.log(`Removed existing ${dbPath} (--fresh)`);
   }
 
+  const incremental = !fresh && dbExists;
   const db = new Database(dbPath);
-  console.log(`Created SQLite database: ${dbPath}`);
+  console.log(incremental ? `Incremental update on ${dbPath}` : `Created SQLite database: ${dbPath}`);
 
-  // Create tables
+  // Create tables (no-op if they already exist)
   db.exec(`
+    CREATE TABLE IF NOT EXISTS _placeholder (id INTEGER);
+  `);
+  if (!incremental) db.exec(`
     CREATE TABLE records (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT NOT NULL,
@@ -77,7 +84,17 @@ async function main() {
 
   let recordCount = 0;
   let workoutCount = 0;
+  let skipped = 0;
   const typesSeen = new Set();
+
+  // For incremental: only insert rows newer than the most recent date already in DB.
+  let recordCutoff = '';
+  let workoutCutoff = '';
+  if (incremental) {
+    recordCutoff = (db.prepare('SELECT MAX(start_date) AS m FROM records').get().m) || '';
+    workoutCutoff = (db.prepare('SELECT MAX(start_date) AS m FROM workouts').get().m) || '';
+    console.log(`Incremental cutoffs — records: ${recordCutoff || '(none)'}, workouts: ${workoutCutoff || '(none)'}`);
+  }
 
   // Use transaction for faster inserts
   const insertMany = db.transaction((records) => {
@@ -144,7 +161,7 @@ async function main() {
           unit = 'hr';
         }
 
-        if (!isNaN(value)) {
+        if (!isNaN(value) && (!recordCutoff || attrs.startDate > recordCutoff)) {
           recordBatch.push({
             type: attrs.type,
             value,
@@ -172,7 +189,7 @@ async function main() {
         attrs[attrMatch[1]] = attrMatch[2];
       }
 
-      if (attrs.workoutActivityType && attrs.startDate) {
+      if (attrs.workoutActivityType && attrs.startDate && (!workoutCutoff || attrs.startDate > workoutCutoff)) {
         try {
           insertWorkout.run(
             attrs.workoutActivityType,

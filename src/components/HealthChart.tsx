@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, type TooltipProps
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  type TooltipProps,
 } from 'recharts';
+import { useTimeRange } from '../hooks/useTimeRange';
+import { sliceByRange } from '../lib/timeRange';
 
 interface HealthChartProps {
   metricType: string;
@@ -9,106 +12,99 @@ interface HealthChartProps {
   color: string;
 }
 
-interface ChartDataPoint {
+interface DailyPoint {
   date: string;
   value: number;
-  label: string;
+  count: number;
 }
 
-interface MetricData {
+interface MetricFile {
   type: string;
-  timeSeries: {
-    '7d': ChartDataPoint[];
-    '30d': ChartDataPoint[];
-    '365d': ChartDataPoint[];
-    'all': ChartDataPoint[];
-  };
+  referenceDate: string;
+  series: DailyPoint[];
   lastUpdated: string;
 }
 
-function formatSleepMinutes(value: number): string {
+function formatSleepHours(value: number): string {
   const totalMinutes = Math.round(value * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes}m`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}m`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+function formatLabel(date: string): string {
+  return new Date(date + 'T00:00:00Z').toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 export default function HealthChart({ metricType, title, color }: HealthChartProps) {
-  const [metricData, setMetricData] = useState<MetricData | null>(null);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '365d' | 'all'>('30d');
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [file, setFile] = useState<MetricFile | null>(null);
+  const [error, setError] = useState(false);
+  const [range] = useTimeRange();
   const isSleep = metricType.includes('Sleep');
 
   useEffect(() => {
-    const filename = metricType.replace('HKQuantityTypeIdentifier', '').replace('HKCategoryTypeIdentifier', '').toLowerCase();
-    fetch(`/data-${filename}.json`)
-      .then(res => res.json())
-      .then(setMetricData)
-      .catch(err => console.error('Failed to load metric data:', err));
+    const slug = metricType
+      .replace('HKQuantityTypeIdentifier', '')
+      .replace('HKCategoryTypeIdentifier', '')
+      .toLowerCase();
+    fetch(`/data-${slug}.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then(setFile)
+      .catch(() => setError(true));
   }, [metricType]);
 
-  useEffect(() => {
-    if (!metricData) return;
-    setChartData(metricData.timeSeries[timeRange] || []);
-  }, [metricData, timeRange]);
+  const chartData = useMemo(() => {
+    if (!file) return [] as Array<DailyPoint & { label: string }>;
+    return sliceByRange(file.series, range, file.referenceDate).map((p) => ({
+      ...p,
+      label: formatLabel(p.date),
+    }));
+  }, [file, range]);
+
+  const formatValue = (v: number) => (isSleep ? formatSleepHours(v) : v.toFixed(1));
 
   function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
     if (!active || !payload?.length) return null;
-    const data = payload[0];
-    const displayValue = typeof data.value === 'number'
-      ? (isSleep ? formatSleepMinutes(data.value) : data.value.toFixed(1))
-      : data.value;
-
+    const v = payload[0].value;
     return (
-      <div style={{
-        background: '#2C2C2E',
-        border: '0.5px solid #38383A',
-        borderRadius: 12,
-        padding: '12px 16px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-      }}>
-        <p style={{ margin: 0, fontSize: 13, color: '#EBEBF599' }}>{label}</p>
-        <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700, color: '#FFFFFF' }}>
-          {displayValue}
+      <div className="rounded-xl border border-(--color-border) bg-(--color-surface-secondary) px-4 py-3 shadow-lg">
+        <p className="m-0 text-[13px] text-(--color-text-secondary)">{label}</p>
+        <p className="m-0 mt-1 text-xl font-bold text-(--color-text-primary)">
+          {typeof v === 'number' ? formatValue(v) : String(v)}
         </p>
       </div>
     );
   }
 
-  if (!metricData) {
+  if (error) {
     return (
-      <div className="health-card" style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--color-text-tertiary)' }}>Loading {title.toLowerCase()} data...</p>
+      <div className="health-card flex h-[300px] items-center justify-center">
+        <p className="text-(--color-text-tertiary)">No data for {title.toLowerCase()}</p>
+      </div>
+    );
+  }
+
+  if (!file) {
+    return (
+      <div className="health-card flex h-[300px] items-center justify-center">
+        <p className="text-(--color-text-tertiary)">Loading {title.toLowerCase()}…</p>
       </div>
     );
   }
 
   return (
     <div className="health-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: 'var(--color-text-secondary)' }}>{title}</h3>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {(['7d', '30d', '365d', 'all'] as const).map(range => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              style={{
-                padding: '4px 12px',
-                borderRadius: 8,
-                border: 'none',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                background: timeRange === range ? color : 'var(--color-surface-secondary)',
-                color: timeRange === range ? '#000' : 'var(--color-text-secondary)',
-              }}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="m-0 text-[17px] font-semibold text-(--color-text-secondary)">{title}</h3>
+        <span className="text-[13px] text-(--color-text-tertiary)">
+          {chartData.length > 0 ? `${chartData.length} days` : '—'}
+        </span>
       </div>
       <ResponsiveContainer width="100%" height={250}>
         <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -119,20 +115,13 @@ export default function HealthChart({ metricType, title, color }: HealthChartPro
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#38383A" />
-          <XAxis
-            dataKey="label"
-            stroke="#EBEBF599"
-            fontSize={11}
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-          />
+          <XAxis dataKey="label" stroke="#EBEBF599" fontSize={11} tickLine={false} axisLine={false} interval="preserveStartEnd" />
           <YAxis
             stroke="#EBEBF599"
             fontSize={11}
             tickLine={false}
             axisLine={false}
-            tickFormatter={isSleep ? (v: number) => formatSleepMinutes(v) : undefined}
+            tickFormatter={isSleep ? (v: number) => formatSleepHours(v) : undefined}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
@@ -142,7 +131,7 @@ export default function HealthChart({ metricType, title, color }: HealthChartPro
             strokeWidth={2}
             fill={`url(#gradient-${metricType})`}
             dot={false}
-            animationDuration={500}
+            animationDuration={400}
           />
         </AreaChart>
       </ResponsiveContainer>
