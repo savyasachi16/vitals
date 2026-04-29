@@ -26,11 +26,6 @@ const glucoseThresholds = [
   { label: 'normal 70–140', y1: 70, y2: 140, color: '#30D158' },
 ];
 
-const steadinessThresholds = [
-  { label: 'OK (>50)', y1: 50, y2: 100, color: '#30D158' },
-  { label: 'low 25–50', y1: 25, y2: 50, color: '#FF9F0A' },
-  { label: 'very low <25', y1: 0, y2: 25, color: '#FF375F' },
-];
 ---
 
 <Layout title="vitals — Apple Health Dashboard">
@@ -106,11 +101,6 @@ const steadinessThresholds = [
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierWalkingSpeed" title="Walking Speed" color={GREEN} />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierWalkingStepLength" title="Walking Step Length" color={GREEN} />
-        <HealthChart client:visible metricType="HKQuantityTypeIdentifierWalkingAsymmetryPercentage" title="Walking Asymmetry" color={GREEN} />
-        <HealthChart client:visible metricType="HKQuantityTypeIdentifierWalkingDoubleSupportPercentage" title="Double Support %" color={GREEN} />
-        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierAppleWalkingSteadiness" title="Walking Steadiness" color={GREEN} unit="%" thresholds={steadinessThresholds} />
-        <HealthChart client:visible metricType="HKQuantityTypeIdentifierStairAscentSpeed" title="Stair Ascent Speed" color={GREEN} />
-        <HealthChart client:visible metricType="HKQuantityTypeIdentifierStairDescentSpeed" title="Stair Descent Speed" color={GREEN} />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierRunningSpeed" title="Running Speed" color={ORANGE} />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierRunningPower" title="Running Power" color={ORANGE} />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierRunningStrideLength" title="Running Stride" color={ORANGE} />

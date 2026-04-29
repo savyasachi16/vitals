@@ -58,12 +58,6 @@ export const DEFAULT_METRICS = [
   // Walking + running form
   'HKQuantityTypeIdentifierWalkingSpeed',
   'HKQuantityTypeIdentifierWalkingStepLength',
-  'HKQuantityTypeIdentifierWalkingAsymmetryPercentage',
-  'HKQuantityTypeIdentifierWalkingDoubleSupportPercentage',
-  'HKQuantityTypeIdentifierAppleWalkingSteadiness',
-  'HKQuantityTypeIdentifierStairAscentSpeed',
-  'HKQuantityTypeIdentifierStairDescentSpeed',
-  'HKQuantityTypeIdentifierSixMinuteWalkTestDistance',
   'HKQuantityTypeIdentifierRunningSpeed',
   'HKQuantityTypeIdentifierRunningPower',
   'HKQuantityTypeIdentifierRunningStrideLength',
