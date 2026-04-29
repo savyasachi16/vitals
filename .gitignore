@@ -1,5 +1,7 @@
 # build output
 dist/
+.vercel/
+
 # generated types
 .astro/
 
@@ -12,22 +14,33 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-
 # environment variables
 .env
 .env.production
+.env.local
 
 # macOS-specific files
 .DS_Store
+*.swp
+*~
 
 # jetbrains setting folder
 .idea/
+.vscode/settings.json
 
-# health data (private)
+# health data (PRIVATE - never commit)
 export.xml
-public/health-data.json
 *.xml
 health.db
+health.db-shm
+health.db-wal
+public/data-*.json
+public/workouts.json
+public/health-stats.json
 
-# Vercel build output
-.vercel/
+# Optional: disable Husky hooks for emergencies
+# .husky/_/
+
+# AI tool settings (keep your own, not repo's)
+.opencode.json
+.claude/settings.json

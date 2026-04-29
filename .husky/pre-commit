@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Prevent committing health data
+if git diff --cached --name-only | grep -E "(health\.db|export\.xml|data-.*\.json|workouts\.json|health-stats\.json)"; then
+  echo "❌ ERROR: Attempting to commit health data files!"
+  echo "The following files are gitignored for privacy:"
+  git diff --cached --name-only | grep -E "(health\.db|export\.xml|data-.*\.json|workouts\.json|health-stats\.json)"
+  echo ""
+  echo "To fix: git reset HEAD -- <files>"
+  exit 1
+fi
+
+echo "✅ No health data in commit"
