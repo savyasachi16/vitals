@@ -9,6 +9,7 @@ import HealthThresholdLine from '../components/HealthThresholdLine.tsx';
 import HealthHeatmap from '../components/HealthHeatmap.tsx';
 import TimeRangeSelector from '../components/TimeRangeSelector.tsx';
 import WorkoutsList from '../components/WorkoutsList.tsx';
+import SummaryStats from '../components/SummaryStats.tsx';
 
 const GREEN = '#30D158';
 const RED = '#FF375F';
@@ -25,7 +26,6 @@ const audioThresholds = [
 const glucoseThresholds = [
   { label: 'normal 70–140', y1: 70, y2: 140, color: '#30D158' },
 ];
-
 ---
 
 <Layout title="vitals — Apple Health Dashboard">
@@ -37,50 +37,54 @@ const glucoseThresholds = [
 
     <TimeRangeSelector client:load />
 
+    <div class="mb-8">
+      <SummaryStats client:load />
+    </div>
+
     <section class="mt-8">
       <h2 class="health-section-header">Activity</h2>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierStepCount" title="Steps" color={GREEN} />
-        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierDistanceWalkingRunning" title="Distance" color={GREEN} unit="km" />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierDistanceWalkingRunning" title="Distance" color={GREEN} />
         <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierFlightsClimbed" title="Flights Climbed" color={GREEN} />
-        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierAppleExerciseTime" title="Exercise Minutes" color={ORANGE} unit="min" />
-        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierAppleStandTime" title="Stand Minutes" color={ORANGE} unit="min" />
-        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierActiveEnergyBurned" title="Active Calories" color={ORANGE} unit="kcal" />
-        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierBasalEnergyBurned" title="Basal Calories" color={ORANGE} unit="kcal" />
-        <HealthChart client:visible metricType="HKQuantityTypeIdentifierPhysicalEffort" title="Physical Effort" color={ORANGE} />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierAppleExerciseTime" title="Exercise" color={ORANGE} />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierAppleStandTime" title="Stand" color={ORANGE} />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierActiveEnergyBurned" title="Active Calories" color={ORANGE} />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierBasalEnergyBurned" title="Basal Calories" color={ORANGE} />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierPhysicalEffort" title="Physical Effort" color={ORANGE} />
       </div>
     </section>
 
     <section class="mt-8">
       <h2 class="health-section-header">Heart</h2>
       <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <HealthKpiTile client:visible metricType="HKQuantityTypeIdentifierRestingHeartRate" title="Resting HR" color={RED} unit="bpm" lowerIsBetter />
-        <HealthKpiTile client:visible metricType="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" title="HRV (SDNN)" color={RED} unit="ms" />
-        <HealthKpiTile client:visible metricType="HKQuantityTypeIdentifierHeartRateRecoveryOneMinute" title="HR Recovery 1m" color={RED} unit="bpm" />
+        <HealthKpiTile client:visible metricType="HKQuantityTypeIdentifierRestingHeartRate" title="Resting HR" color={RED} lowerIsBetter />
+        <HealthKpiTile client:visible metricType="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" title="HRV (SDNN)" color={RED} />
+        <HealthKpiTile client:visible metricType="HKQuantityTypeIdentifierHeartRateRecoveryOneMinute" title="HR Recovery 1m" color={RED} />
       </div>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierHeartRate" title="Heart Rate" color={RED} unit="bpm" />
-        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierWalkingHeartRateAverage" title="Walking Heart Rate" color={RED} unit="bpm" />
-        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierVO2Max" title="VO2 Max" color={BLUE} unit="mL/kg·min" />
+        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierHeartRate" title="Heart Rate" color={RED} />
+        <HealthChart client:visible metricType="HKQuantityTypeIdentifierWalkingHeartRateAverage" title="Walking Heart Rate" color={RED} />
+        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierVO2Max" title="VO2 Max" color={RED} />
       </div>
     </section>
 
     <section class="mt-8">
       <h2 class="health-section-header">Respiratory</h2>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierRespiratoryRate" title="Respiratory Rate" color={BLUE} unit="bpm" />
-        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierOxygenSaturation" title="Blood Oxygen" color={BLUE} unit="%" />
+        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierRespiratoryRate" title="Respiratory Rate" color={BLUE} />
+        <HealthRangeBand client:visible metricType="HKQuantityTypeIdentifierOxygenSaturation" title="Blood Oxygen" color={BLUE} />
       </div>
     </section>
 
     <section class="mt-8">
       <h2 class="health-section-header">Body</h2>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierBodyMass" title="Weight" color={BLUE} unit="kg" />
+        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierBodyMass" title="Weight" color={BLUE} />
         <HealthScatter client:visible metricType="HKQuantityTypeIdentifierBodyMassIndex" title="BMI" color={BLUE} />
-        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierBodyFatPercentage" title="Body Fat" color={RED} unit="%" />
-        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierLeanBodyMass" title="Lean Mass" color={GREEN} unit="kg" />
-        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierBloodGlucose" title="Blood Glucose" color={RED} unit="mg/dL" thresholds={glucoseThresholds} />
+        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierBodyFatPercentage" title="Body Fat" color={BLUE} />
+        <HealthScatter client:visible metricType="HKQuantityTypeIdentifierLeanBodyMass" title="Lean Mass" color={BLUE} />
+        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierBloodGlucose" title="Blood Glucose" color={BLUE} thresholds={glucoseThresholds} />
       </div>
     </section>
 
@@ -90,7 +94,10 @@ const glucoseThresholds = [
         <HealthHeatmap client:visible metricType="HKCategoryTypeIdentifierSleepAnalysis" title="Sleep Calendar" color={PURPLE} unit="hr" />
       </div>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <HealthChart client:visible metricType="HKCategoryTypeIdentifierSleepAnalysis" title="Sleep Duration" color={PURPLE} />
+        <HealthBarChart client:visible metricType="HKCategoryTypeIdentifierSleepAnalysis" title="Sleep Duration" color={PURPLE} formatter={(v: number) => {
+          const m = Math.round(v * 60);
+          return `${Math.floor(m / 60)}h ${m % 60}m`;
+        }} unit="hr" />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierAppleSleepingWristTemperature" title="Wrist Temperature" color={PURPLE} />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances" title="Breathing Disturbances" color={PURPLE} />
       </div>
@@ -112,9 +119,9 @@ const glucoseThresholds = [
     <section class="mt-8">
       <h2 class="health-section-header">Environment</h2>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierTimeInDaylight" title="Time in Daylight" color={ORANGE} unit="min" />
-        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierEnvironmentalAudioExposure" title="Environmental Audio" color={BLUE} unit="dB" thresholds={audioThresholds} />
-        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierHeadphoneAudioExposure" title="Headphone Audio" color={BLUE} unit="dB" thresholds={audioThresholds} />
+        <HealthBarChart client:visible metricType="HKQuantityTypeIdentifierTimeInDaylight" title="Time in Daylight" color={ORANGE} />
+        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierEnvironmentalAudioExposure" title="Environmental Audio" color={BLUE} thresholds={audioThresholds} />
+        <HealthThresholdLine client:visible metricType="HKQuantityTypeIdentifierHeadphoneAudioExposure" title="Headphone Audio" color={BLUE} thresholds={audioThresholds} />
         <HealthChart client:visible metricType="HKQuantityTypeIdentifierEnvironmentalSoundReduction" title="Sound Reduction" color={BLUE} />
       </div>
     </section>

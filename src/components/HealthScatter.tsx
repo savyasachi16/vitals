@@ -5,6 +5,8 @@ import {
 } from 'recharts';
 import { useMetric } from '../hooks/useMetric';
 import { linearFit } from '../lib/regression';
+import Empty from './_chart/Empty';
+import ChartTooltip from './_chart/Tooltip';
 
 interface Props {
   metricType: string;
@@ -14,7 +16,8 @@ interface Props {
 }
 
 export default function HealthScatter({ metricType, title, color, unit }: Props) {
-  const { series, error, loading } = useMetric(metricType);
+  const { series, error, loading, isEmpty, unit: jsonUnit } = useMetric(metricType);
+  const displayUnit = unit ?? jsonUnit;
 
   const { data, fitLine, latest, slopePerYear } = useMemo(() => {
     const data = series.map((p) => ({
@@ -36,24 +39,23 @@ export default function HealthScatter({ metricType, title, color, unit }: Props)
     return { data, fitLine, latest: data.at(-1), slopePerYear };
   }, [series]);
 
-  if (error) return <Empty title={title} message="No data" />;
+  if (error || isEmpty) return null;
   if (loading) return <Empty title={title} message="Loading…" />;
 
-  // Merge scatter points and fit-line endpoints into a single dataset keyed by t.
-  const merged = [...data.map((p) => ({ t: p.t, value: p.value, label: p.date })), ...fitLine.map((p) => ({ t: p.t, trend: p.trend, label: '' }))]
-    .sort((a, b) => a.t - b.t);
+  const merged = [
+    ...data.map((p) => ({ t: p.t, value: p.value, label: p.date })),
+    ...fitLine.map((p) => ({ t: p.t, trend: p.trend, label: '' })),
+  ].sort((a, b) => a.t - b.t);
 
   function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload as { value?: number; label?: string };
     if (row.value == null) return null;
     return (
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface-secondary) px-4 py-3 shadow-lg">
-        <p className="m-0 text-[13px] text-(--color-text-secondary)">{row.label}</p>
-        <p className="m-0 mt-1 text-xl font-bold text-(--color-text-primary)">
-          {row.value.toFixed(2)}{unit ? ` ${unit}` : ''}
-        </p>
-      </div>
+      <ChartTooltip
+        label={row.label}
+        primary={`${row.value.toFixed(2)}${displayUnit ? ` ${displayUnit}` : ''}`}
+      />
     );
   }
 
@@ -61,10 +63,13 @@ export default function HealthScatter({ metricType, title, color, unit }: Props)
     <div className="health-card">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="m-0 text-[17px] font-semibold text-(--color-text-secondary)">
-          {title}{unit ? <span className="ml-2 text-[12px] font-normal text-(--color-text-tertiary)">{unit}</span> : null}
+          {title}
+          {displayUnit && (
+            <span className="ml-2 text-[12px] font-normal text-(--color-text-tertiary)">{displayUnit}</span>
+          )}
         </h3>
         <span className="text-[13px] text-(--color-text-tertiary)">
-          {latest ? `${latest.value.toFixed(1)}${unit ? ' ' + unit : ''}` : '—'}
+          {latest ? `${latest.value.toFixed(1)}${displayUnit ? ' ' + displayUnit : ''}` : '—'}
           {Number.isFinite(slopePerYear) && Math.abs(slopePerYear) > 0.01 && (
             <span className={`ml-2 ${slopePerYear < 0 ? 'text-(--color-accent-green)' : 'text-(--color-accent-red)'}`}>
               {slopePerYear > 0 ? '↑' : '↓'} {Math.abs(slopePerYear).toFixed(1)}/yr
@@ -92,14 +97,6 @@ export default function HealthScatter({ metricType, title, color, unit }: Props)
           <Scatter dataKey="value" fill={color} />
         </ComposedChart>
       </ResponsiveContainer>
-    </div>
-  );
-}
-
-function Empty({ title, message }: { title: string; message: string }) {
-  return (
-    <div className="health-card flex h-[300px] items-center justify-center">
-      <p className="text-(--color-text-tertiary)">{message} {title.toLowerCase()}</p>
     </div>
   );
 }

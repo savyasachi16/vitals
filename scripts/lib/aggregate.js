@@ -78,6 +78,15 @@ export function metricFilename(type) {
     .toLowerCase();
 }
 
+export function metricUnit(db, type) {
+  const row = db.prepare(`
+    SELECT unit, COUNT(*) AS c FROM records
+    WHERE type = ? AND unit IS NOT NULL AND unit != ''
+    GROUP BY unit ORDER BY c DESC LIMIT 1
+  `).get(type);
+  return row?.unit ?? '';
+}
+
 export function buildDailySeries(db, type) {
   const isSum = SUM_TYPES.has(type);
   const sql = isSum

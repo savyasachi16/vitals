@@ -12,6 +12,7 @@ export interface DailyPoint {
 
 export interface MetricFile {
   type: string;
+  unit?: string;
   referenceDate: string;
   series: DailyPoint[];
   lastUpdated: string;
@@ -41,7 +42,15 @@ export function useMetric(metricType: string) {
     return sliceByRange(file.series, range, file.referenceDate);
   }, [file, range]);
 
-  return { file, series, range, error, loading: !file && !error };
+  return {
+    file,
+    series,
+    range,
+    unit: file?.unit ?? '',
+    error,
+    loading: !file && !error,
+    isEmpty: !!file && file.series.length === 0,
+  };
 }
 
 export function formatLabel(date: string): string {

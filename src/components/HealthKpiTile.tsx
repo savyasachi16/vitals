@@ -19,23 +19,29 @@ export default function HealthKpiTile({
   precision = 0,
   lowerIsBetter = false,
 }: Props) {
-  const { series, error, loading } = useMetric(metricType);
+  const { series, error, loading, isEmpty, unit: jsonUnit } = useMetric(metricType);
+  const displayUnit = unit ?? jsonUnit;
 
-  const { current, baseline, delta } = useMemo(() => {
-    if (series.length === 0) return { current: null, baseline: null, delta: 0 };
+  const { current, baseline, delta, hasBaseline } = useMemo(() => {
+    if (series.length === 0) {
+      return { current: null, baseline: null, delta: 0, hasBaseline: false };
+    }
     const last = series[series.length - 1].value;
+    if (series.length === 1) {
+      return { current: last, baseline: null, delta: 0, hasBaseline: false };
+    }
     const window = series.slice(-30);
     const mean = window.reduce((a, p) => a + p.value, 0) / window.length;
-    return { current: last, baseline: mean, delta: last - mean };
+    return { current: last, baseline: mean, delta: last - mean, hasBaseline: true };
   }, [series]);
 
-  if (error) return <Empty title={title} message="No data" />;
-  if (loading) return <Empty title={title} message="Loading…" />;
-  if (current == null) return <Empty title={title} message="Empty" />;
+  if (error || isEmpty) return null;
+  if (loading) return <EmptyTile title={title} message="Loading…" />;
+  if (current == null) return null;
 
   const goodChange = lowerIsBetter ? delta < 0 : delta > 0;
-  const arrow = delta === 0 ? '·' : delta > 0 ? '↑' : '↓';
-  const deltaClass = delta === 0
+  const arrow = !hasBaseline ? '·' : delta === 0 ? '·' : delta > 0 ? '↑' : '↓';
+  const deltaClass = !hasBaseline || delta === 0
     ? 'text-(--color-text-tertiary)'
     : goodChange
     ? 'text-(--color-accent-green)'
@@ -48,10 +54,12 @@ export default function HealthKpiTile({
         <span className="text-[40px] font-bold leading-none tracking-tight text-(--color-text-primary)">
           {current.toFixed(precision)}
         </span>
-        {unit && <span className="text-[14px] text-(--color-text-tertiary)">{unit}</span>}
+        {displayUnit && <span className="text-[14px] text-(--color-text-tertiary)">{displayUnit}</span>}
       </div>
       <p className={`m-0 mt-1 text-[13px] ${deltaClass}`}>
-        {arrow} {Math.abs(delta).toFixed(precision)} vs 30d avg ({baseline?.toFixed(precision)})
+        {hasBaseline
+          ? `${arrow} ${Math.abs(delta).toFixed(precision)} vs 30d avg (${baseline?.toFixed(precision)})`
+          : 'no history yet'}
       </p>
       <div className="mt-3 -mx-1">
         <ResponsiveContainer width="100%" height={48}>
@@ -70,7 +78,7 @@ export default function HealthKpiTile({
   );
 }
 
-function Empty({ title, message }: { title: string; message: string }) {
+function EmptyTile({ title, message }: { title: string; message: string }) {
   return (
     <div className="health-card flex h-[150px] flex-col items-start justify-center">
       <h3 className="m-0 text-[15px] font-semibold text-(--color-text-secondary)">{title}</h3>

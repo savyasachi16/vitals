@@ -1,9 +1,11 @@
 import {
-  AreaChart, Area, Line, ReferenceArea, ReferenceLine, XAxis, YAxis,
+  Line, ReferenceArea, ReferenceLine, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart,
   type TooltipProps,
 } from 'recharts';
 import { useMetric, formatLabel } from '../hooks/useMetric';
+import Empty from './_chart/Empty';
+import ChartTooltip from './_chart/Tooltip';
 
 interface Threshold {
   label: string;
@@ -21,9 +23,10 @@ interface Props {
 }
 
 export default function HealthThresholdLine({ metricType, title, color, unit, thresholds = [] }: Props) {
-  const { series, error, loading } = useMetric(metricType);
+  const { series, error, loading, isEmpty, unit: jsonUnit } = useMetric(metricType);
+  const displayUnit = unit ?? jsonUnit;
 
-  if (error) return <Empty title={title} message="No data" />;
+  if (error || isEmpty) return null;
   if (loading) return <Empty title={title} message="Loading…" />;
 
   const data = series.map((p) => ({ ...p, label: formatLabel(p.date) }));
@@ -32,12 +35,10 @@ export default function HealthThresholdLine({ metricType, title, color, unit, th
     if (!active || !payload?.length) return null;
     const v = payload.find((x) => x.dataKey === 'value')?.value;
     return (
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface-secondary) px-4 py-3 shadow-lg">
-        <p className="m-0 text-[13px] text-(--color-text-secondary)">{label}</p>
-        <p className="m-0 mt-1 text-xl font-bold text-(--color-text-primary)">
-          {typeof v === 'number' ? v.toFixed(1) : '—'}{unit ? ` ${unit}` : ''}
-        </p>
-      </div>
+      <ChartTooltip
+        label={String(label)}
+        primary={`${typeof v === 'number' ? v.toFixed(1) : '—'}${displayUnit ? ` ${displayUnit}` : ''}`}
+      />
     );
   }
 
@@ -45,7 +46,10 @@ export default function HealthThresholdLine({ metricType, title, color, unit, th
     <div className="health-card">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="m-0 text-[17px] font-semibold text-(--color-text-secondary)">
-          {title}{unit ? <span className="ml-2 text-[12px] font-normal text-(--color-text-tertiary)">{unit}</span> : null}
+          {title}
+          {displayUnit && (
+            <span className="ml-2 text-[12px] font-normal text-(--color-text-tertiary)">{displayUnit}</span>
+          )}
         </h3>
         {thresholds.length > 0 && (
           <span className="flex gap-2 text-[11px] text-(--color-text-tertiary)">
@@ -74,14 +78,6 @@ export default function HealthThresholdLine({ metricType, title, color, unit, th
           <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
-    </div>
-  );
-}
-
-function Empty({ title, message }: { title: string; message: string }) {
-  return (
-    <div className="health-card flex h-[300px] items-center justify-center">
-      <p className="text-(--color-text-tertiary)">{message} {title.toLowerCase()}</p>
     </div>
   );
 }

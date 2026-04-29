@@ -1,6 +1,6 @@
 import fs from 'fs';
 import Database from 'better-sqlite3';
-import { DEFAULT_METRICS, buildDailySeries, metricFilename } from './lib/aggregate.js';
+import { DEFAULT_METRICS, buildDailySeries, metricFilename, metricUnit } from './lib/aggregate.js';
 
 const db = new Database('health.db', { readonly: true });
 
@@ -36,6 +36,7 @@ for (const type of DEFAULT_METRICS) {
   const series = buildDailySeries(db, type);
   const out = {
     type,
+    unit: metricUnit(db, type),
     referenceDate: dateRange.end,
     series,
     lastUpdated: new Date().toISOString(),
