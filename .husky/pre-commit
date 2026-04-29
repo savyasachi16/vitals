@@ -1,8 +1,9 @@
-# Prevent committing health data
-if git diff --cached --name-only | grep -E "(health\.db|export\.xml|data-.*\.json|workouts\.json|health-stats\.json)"; then
+# Block staged additions/modifications of health data. Deletions are allowed
+# so we can `git rm --cached` files that were tracked before the gitignore.
+PATTERN="(health\.db|export\.xml|data-.*\.json|workouts\.json|health-stats\.json)"
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE "$PATTERN"; then
   echo "❌ ERROR: Attempting to commit health data files!"
-  echo "The following files are gitignored for privacy:"
-  git diff --cached --name-only | grep -E "(health\.db|export\.xml|data-.*\.json|workouts\.json|health-stats\.json)"
+  git diff --cached --name-only --diff-filter=ACMR | grep -E "$PATTERN"
   echo ""
   echo "To fix: git reset HEAD -- <files>"
   exit 1
