@@ -1,0 +1,44 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HealthChart from '../components/HealthChart.tsx';
+import TimeRangeSelector from '../components/TimeRangeSelector.tsx';
+import { METRICS } from '../types/health';
+---
+
+<Layout title="vitals — Apple Health Dashboard">
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-5xl font-bold tracking-tight mb-2">vitals</h1>
+      <p class="text-text-secondary text-lg">Apple Health data dashboard</p>
+    </header>
+
+    <TimeRangeSelector client:load />
+
+    <section class="mt-8">
+      <h2 class="health-section-header">Activity</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierStepCount" title="Steps" color="#30D158" />
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierHeartRate" title="Heart Rate" color="#FF375F" />
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierActiveEnergyBurned" title="Active Calories" color="#FF9F0A" />
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierBasalEnergyBurned" title="Basal Calories" color="#FF9F0A" />
+      </div>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="health-section-header">Body</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierBodyMass" title="Weight" color="#0A84FF" />
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierVO2Max" title="VO2 Max" color="#0A84FF" />
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierBodyFatPercentage" title="Body Fat" color="#FF375F" />
+        <HealthChart client:load metricType="HKQuantityTypeIdentifierLeanBodyMass" title="Lean Mass" color="#30D158" />
+      </div>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="health-section-header">Sleep</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <HealthChart client:load metricType="HKCategoryTypeIdentifierSleepAnalysis" title="Sleep" color="#BF5AF2" />
+      </div>
+    </section>
+  </main>
+</Layout>
