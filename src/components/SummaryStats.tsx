@@ -55,7 +55,7 @@ export default function SummaryStats() {
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       {TILES.map((t) => {
         const v = averages[t.metricType];
-        const display = v == null ? '—' : t.formatter ? t.formatter(v) : v.toFixed(t.precision);
+        const display = v == null ? '-' : t.formatter ? t.formatter(v) : v.toFixed(t.precision);
         return (
           <div key={t.metricType} className="health-card">
             <p className="m-0 text-[12px] uppercase tracking-wide text-(--color-text-tertiary)">{t.label}</p>

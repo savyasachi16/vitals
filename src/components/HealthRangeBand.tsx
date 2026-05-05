@@ -36,7 +36,7 @@ export default function HealthRangeBand({ metricType, title, color, unit }: Prop
       <ChartTooltip
         label={String(label)}
         primary={`${row.avg.toFixed(1)}${displayUnit ? ` ${displayUnit}` : ''}`}
-        secondary={`${row.min.toFixed(0)}–${row.rawMax.toFixed(0)} range`}
+        secondary={`${row.min.toFixed(0)}-${row.rawMax.toFixed(0)} range`}
       />
     );
   }

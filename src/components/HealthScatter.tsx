@@ -69,7 +69,7 @@ export default function HealthScatter({ metricType, title, color, unit }: Props)
           )}
         </h3>
         <span className="text-[13px] text-(--color-text-tertiary)">
-          {latest ? `${latest.value.toFixed(1)}${displayUnit ? ' ' + displayUnit : ''}` : '—'}
+          {latest ? `${latest.value.toFixed(1)}${displayUnit ? ' ' + displayUnit : ''}` : '-'}
           {Number.isFinite(slopePerYear) && Math.abs(slopePerYear) > 0.01 && (
             <span className={`ml-2 ${slopePerYear < 0 ? 'text-(--color-accent-green)' : 'text-(--color-accent-red)'}`}>
               {slopePerYear > 0 ? '↑' : '↓'} {Math.abs(slopePerYear).toFixed(1)}/yr

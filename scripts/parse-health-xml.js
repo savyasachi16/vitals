@@ -93,7 +93,7 @@ async function main() {
   if (incremental) {
     recordCutoff = (db.prepare('SELECT MAX(start_date) AS m FROM records').get().m) || '';
     workoutCutoff = (db.prepare('SELECT MAX(start_date) AS m FROM workouts').get().m) || '';
-    console.log(`Incremental cutoffs — records: ${recordCutoff || '(none)'}, workouts: ${workoutCutoff || '(none)'}`);
+    console.log(`Incremental cutoffs: records: ${recordCutoff || '(none)'}, workouts: ${workoutCutoff || '(none)'}`);
   }
 
   // Use transaction for faster inserts

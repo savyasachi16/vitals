@@ -26,11 +26,11 @@ Re-runs are incremental. `npm run ingest:fresh` rebuilds from scratch.
 
 ## Layout
 
-- `src/lib/timeRange.ts` — shared time-range store, URL-synced via `?range=`
-- `src/components/HealthChart.tsx` — one Recharts area chart per metric
-- `scripts/parse-health-xml.js` — streams `export.xml` into SQLite
-- `scripts/generate-json.js` — emits one daily series per metric to `public/data-*.json`
-- `scripts/lib/aggregate.js` — `SUM_TYPES`, `DEFAULT_METRICS`, the SUM/AVG logic
+- `src/lib/timeRange.ts`: shared time-range store, URL-synced via `?range=`
+- `src/components/HealthChart.tsx`: one Recharts area chart per metric
+- `scripts/parse-health-xml.js`: streams `export.xml` into SQLite
+- `scripts/generate-json.js`: emits one daily series per metric to `public/data-*.json`
+- `scripts/lib/aggregate.js`: `SUM_TYPES`, `DEFAULT_METRICS`, the SUM/AVG logic
 
 ## Add a metric
 

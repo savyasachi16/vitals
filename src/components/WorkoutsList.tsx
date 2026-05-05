@@ -90,7 +90,7 @@ export default function WorkoutsList() {
                 {formatDuration(w.duration)}
               </p>
               <p className="m-0 text-[12px] text-(--color-text-tertiary)">
-                {w.total_energy_kcal > 0 ? `${Math.round(w.total_energy_kcal)} kcal` : '—'}
+                {w.total_energy_kcal > 0 ? `${Math.round(w.total_energy_kcal)} kcal` : '-'}
               </p>
             </div>
           </li>

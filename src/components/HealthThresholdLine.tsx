@@ -37,7 +37,7 @@ export default function HealthThresholdLine({ metricType, title, color, unit, th
     return (
       <ChartTooltip
         label={String(label)}
-        primary={`${typeof v === 'number' ? v.toFixed(1) : '—'}${displayUnit ? ` ${displayUnit}` : ''}`}
+        primary={`${typeof v === 'number' ? v.toFixed(1) : '-'}${displayUnit ? ` ${displayUnit}` : ''}`}
       />
     );
   }

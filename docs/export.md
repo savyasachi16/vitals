@@ -16,7 +16,7 @@ Follow these steps to export your health data from iPhone and prepare it for the
 ## Step 2: Extract the Export
 
 1. On your Mac, locate the saved `health-records.zip`
-2. Double-click to extract — this creates a folder containing `export.xml`
+2. Double-click to extract: this creates a folder containing `export.xml`
 3. The `export.xml` file contains all your health and fitness data in XML format
 4. Typical size: 1-2GB for years of data (3.68M records in our test)
 
@@ -88,7 +88,7 @@ Dashboard (reads JSON at build time, Vercel-compatible)
 ## Data Privacy
 
 - Your `export.xml` and `health.db` are **never** sent anywhere
-- All data files (`health.db`, `public/data-*.json`) are in `.gitignore` — won't be committed to git
+- All data files (`health.db`, `public/data-*.json`) are in `.gitignore`: won't be committed to git
 - All processing happens locally on your machine
 - The dashboard runs entirely in your browser (no server-side data collection)
 - SQLite database is local-only, never exposed to network
@@ -113,11 +113,11 @@ To refresh your dashboard with new data:
    node scripts/parse-health-xml.js new-export.xml
    node scripts/generate-json.js
    ```
-3. Refresh your browser — the dashboard updates automatically
+3. Refresh your browser: the dashboard updates automatically
 
 ## Performance Notes
 
 - Parsing 1.36GB export.xml takes ~2-3 minutes on modern Mac
-- SQLite database is 366MB (too large for GitHub's 100MB limit — hence gitignored)
+- SQLite database is 366MB (too large for GitHub's 100MB limit: hence gitignored)
 - Generated JSON files are <300KB each (safe for git, fast for dashboard)
-- Dashboard is static (no runtime DB queries) — perfect for Vercel deployment
+- Dashboard is static (no runtime DB queries): perfect for Vercel deployment
