@@ -136,13 +136,21 @@ fn stats_report_min_max_date_and_unique_types() {
     assert_eq!(stats.workouts_inserted, 2);
     assert_eq!(stats.unique_record_types, 2);
     assert_eq!(stats.unique_workout_types, 2);
-    assert_eq!(stats.date_range, Some(("2024-03-10".into(), "2024-04-01".into())));
+    assert_eq!(
+        stats.date_range,
+        Some(("2024-03-10".into(), "2024-04-01".into()))
+    );
 }
 
 #[test]
 fn empty_xml_produces_zero_stats_and_no_date_range() {
     let conn = fresh_conn();
-    let stats = ingest_xml(b"<HealthData></HealthData>".as_ref(), &conn, IngestMode::Fresh).unwrap();
+    let stats = ingest_xml(
+        b"<HealthData></HealthData>".as_ref(),
+        &conn,
+        IngestMode::Fresh,
+    )
+    .unwrap();
     assert_eq!(stats.records_inserted, 0);
     assert_eq!(stats.workouts_inserted, 0);
     assert_eq!(stats.unique_record_types, 0);

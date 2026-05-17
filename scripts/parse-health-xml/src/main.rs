@@ -48,14 +48,12 @@ fn main() -> Result<()> {
 
     let db_existed = args.db.exists();
     if args.fresh && db_existed {
-        fs::remove_file(&args.db)
-            .with_context(|| format!("remove {}", args.db.display()))?;
+        fs::remove_file(&args.db).with_context(|| format!("remove {}", args.db.display()))?;
         println!("Removed existing {} (--fresh)", args.db.display());
     }
     let incremental = !args.fresh && db_existed;
 
-    let conn = Connection::open(&args.db)
-        .with_context(|| format!("open {}", args.db.display()))?;
+    let conn = Connection::open(&args.db).with_context(|| format!("open {}", args.db.display()))?;
     create_schema(&conn).context("create schema")?;
 
     if incremental {

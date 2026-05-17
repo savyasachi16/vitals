@@ -122,7 +122,11 @@ fn creates_expected_indexes() {
     create_schema(&conn).unwrap();
     assert_eq!(
         index_names(&conn, "records"),
-        vec!["idx_records_date", "idx_records_type", "idx_records_type_date"]
+        vec![
+            "idx_records_date",
+            "idx_records_type",
+            "idx_records_type_date"
+        ]
     );
     assert_eq!(
         index_names(&conn, "workouts"),
@@ -147,6 +151,14 @@ fn type_and_start_date_are_not_null() {
     let by_name = |name: &str| cols.iter().find(|(n, _, _)| n == name).unwrap();
     assert_eq!(by_name("type").2, 1, "records.type should be NOT NULL");
     assert_eq!(by_name("value").2, 1, "records.value should be NOT NULL");
-    assert_eq!(by_name("start_date").2, 1, "records.start_date should be NOT NULL");
-    assert_eq!(by_name("end_date").2, 1, "records.end_date should be NOT NULL");
+    assert_eq!(
+        by_name("start_date").2,
+        1,
+        "records.start_date should be NOT NULL"
+    );
+    assert_eq!(
+        by_name("end_date").2,
+        1,
+        "records.end_date should be NOT NULL"
+    );
 }

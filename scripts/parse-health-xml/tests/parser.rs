@@ -75,7 +75,8 @@ fn skips_record_with_non_numeric_value_outside_sleep() {
 
 #[test]
 fn skips_record_missing_type() {
-    let xml = r#"<HealthData><Record value="100" startDate="2024-03-15 10:00:00 -0400"/></HealthData>"#;
+    let xml =
+        r#"<HealthData><Record value="100" startDate="2024-03-15 10:00:00 -0400"/></HealthData>"#;
     assert!(parse(xml).is_empty());
 }
 

@@ -100,7 +100,10 @@ fn record_from_attrs(e: &BytesStart<'_>) -> Result<Option<Record>, ParseError> {
         Some(v) => v.clone(),
         None => return Ok(None),
     };
-    let end_date = attrs.get("endDate").cloned().unwrap_or_else(|| start_date.clone());
+    let end_date = attrs
+        .get("endDate")
+        .cloned()
+        .unwrap_or_else(|| start_date.clone());
     let unit_attr = attrs.get("unit").cloned().unwrap_or_default();
     let source_name = attrs.get("sourceName").cloned().unwrap_or_default();
     let value_attr = attrs.get("value").map(String::as_str).unwrap_or("");
@@ -145,13 +148,22 @@ fn workout_from_attrs(e: &BytesStart<'_>) -> Result<Option<Workout>, ParseError>
         Some(v) => v.clone(),
         None => return Ok(None),
     };
-    let end_date = attrs.get("endDate").cloned().unwrap_or_else(|| start_date.clone());
+    let end_date = attrs
+        .get("endDate")
+        .cloned()
+        .unwrap_or_else(|| start_date.clone());
 
     Ok(Some(Workout {
         activity_type,
         duration: parse_f64_default(attrs.get("duration").map(String::as_str), 0.0),
-        duration_unit: attrs.get("durationUnit").cloned().unwrap_or_else(|| "min".to_string()),
-        total_energy_kcal: parse_f64_default(attrs.get("totalEnergyBurned").map(String::as_str), 0.0),
+        duration_unit: attrs
+            .get("durationUnit")
+            .cloned()
+            .unwrap_or_else(|| "min".to_string()),
+        total_energy_kcal: parse_f64_default(
+            attrs.get("totalEnergyBurned").map(String::as_str),
+            0.0,
+        ),
         total_distance: parse_f64_default(attrs.get("totalDistance").map(String::as_str), 0.0),
         distance_unit: attrs.get("totalDistanceUnit").cloned().unwrap_or_default(),
         start_date,
@@ -160,7 +172,9 @@ fn workout_from_attrs(e: &BytesStart<'_>) -> Result<Option<Workout>, ParseError>
     }))
 }
 
-fn collect_attrs(e: &BytesStart<'_>) -> Result<std::collections::HashMap<String, String>, ParseError> {
+fn collect_attrs(
+    e: &BytesStart<'_>,
+) -> Result<std::collections::HashMap<String, String>, ParseError> {
     let mut map = std::collections::HashMap::with_capacity(8);
     for attr in e.attributes() {
         let a = attr?;

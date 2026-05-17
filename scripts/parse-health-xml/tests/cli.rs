@@ -200,7 +200,9 @@ fn final_output_includes_date_range_and_type_counts() {
         .arg(&db)
         .assert()
         .success()
-        .stdout(predicate::str::contains("Date range: 2024-03-15 to 2024-03-16"))
+        .stdout(predicate::str::contains(
+            "Date range: 2024-03-15 to 2024-03-16",
+        ))
         .stdout(predicate::str::contains("Unique record types: 1"))
         .stdout(predicate::str::contains("Unique workout types: 1"));
 }

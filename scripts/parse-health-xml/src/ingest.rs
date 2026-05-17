@@ -100,25 +100,21 @@ pub fn ingest_xml<R: BufRead>(
     flush_workouts(&tx, &mut workout_buf, &mut workouts_inserted)?;
     tx.commit()?;
 
-    let unique_record_types = conn.query_row(
-        "SELECT COUNT(DISTINCT type) FROM records",
-        [],
-        |r| r.get::<_, i64>(0),
-    )? as u64;
+    let unique_record_types =
+        conn.query_row("SELECT COUNT(DISTINCT type) FROM records", [], |r| {
+            r.get::<_, i64>(0)
+        })? as u64;
     let unique_workout_types = conn.query_row(
         "SELECT COUNT(DISTINCT activity_type) FROM workouts",
         [],
         |r| r.get::<_, i64>(0),
     )? as u64;
-    let date_range: Option<(String, String)> = conn.query_row(
-        "SELECT MIN(date), MAX(date) FROM records",
-        [],
-        |r| {
+    let date_range: Option<(String, String)> =
+        conn.query_row("SELECT MIN(date), MAX(date) FROM records", [], |r| {
             let min: Option<String> = r.get(0)?;
             let max: Option<String> = r.get(1)?;
             Ok(min.zip(max))
-        },
-    )?;
+        })?;
 
     Ok(IngestStats {
         records_inserted,
@@ -137,11 +133,10 @@ fn cutoff_allows(cutoff: &Option<String>, start_date: &str) -> bool {
 }
 
 fn max_start_date(conn: &Connection, table: &str) -> Result<Option<String>, IngestError> {
-    let value: Option<String> = conn.query_row(
-        &format!("SELECT MAX(start_date) FROM {table}"),
-        [],
-        |r| r.get(0),
-    )?;
+    let value: Option<String> =
+        conn.query_row(&format!("SELECT MAX(start_date) FROM {table}"), [], |r| {
+            r.get(0)
+        })?;
     Ok(value)
 }
 
@@ -158,7 +153,14 @@ fn flush_records(
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
     )?;
     for r in buf.drain(..) {
-        stmt.execute(params![r.r#type, r.value, r.unit, r.start_date, r.end_date, r.source_name])?;
+        stmt.execute(params![
+            r.r#type,
+            r.value,
+            r.unit,
+            r.start_date,
+            r.end_date,
+            r.source_name
+        ])?;
         *counter += 1;
     }
     Ok(())
