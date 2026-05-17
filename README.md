@@ -10,6 +10,7 @@ My Apple Health data, as a dashboard. Astro + React + Recharts, SQLite for inges
 <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
 <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript" /></a>
 <a href="https://www.sqlite.org"><img src="https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white" alt="SQLite" /></a>
+<a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white" alt="Rust" /></a>
 <a href="https://vitest.dev"><img src="https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white" alt="Vitest" /></a>
 <a href="https://vercel.com"><img src="https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white" alt="Vercel" /></a>
 
@@ -18,17 +19,20 @@ My Apple Health data, as a dashboard. Astro + React + Recharts, SQLite for inges
 ```bash
 npm install
 # Health app → Profile → Export All Health Data → drop export.xml in repo root
-npm run ingest export.xml
+npm run ingest export.xml         # first run cargo-builds scripts/parse-health-xml
 npm run dev
 ```
 
 Re-runs are incremental. `npm run ingest:fresh` rebuilds from scratch.
 
+Requires a Rust toolchain (`brew install rust` or `https://rustup.rs`); the XML parser is a Rust binary at `scripts/parse-health-xml/` and `scripts/ingest.js` compiles it on first run.
+
 ## Layout
 
 - `src/lib/timeRange.ts`: shared time-range store, URL-synced via `?range=`
 - `src/components/HealthChart.tsx`: one Recharts area chart per metric
-- `scripts/parse-health-xml.js`: streams `export.xml` into SQLite
+- `scripts/parse-health-xml/`: Rust crate that streams `export.xml` into SQLite (quick-xml + rusqlite)
+- `scripts/ingest.js`: thin pipeline — builds the Rust binary on first run, then chains the JSON generator
 - `scripts/generate-json.js`: emits one daily series per metric to `public/data-*.json`
 - `scripts/lib/aggregate.js`: `SUM_TYPES`, `DEFAULT_METRICS`, the SUM/AVG logic
 

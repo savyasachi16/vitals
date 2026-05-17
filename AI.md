@@ -11,6 +11,7 @@ Repo: github.com/savyasachi16/vitals
 - React + Recharts: interactive health charts via `@astrojs/react`
 - TypeScript strict: types in `src/types/`
 - SQLite: local-first ingestion, never committed
+- Rust + quick-xml + rusqlite: XML parser at `scripts/parse-health-xml/` (ported from JS 2026-05-17)
 
 ## Design system
 
@@ -37,7 +38,10 @@ src/
   types/
     health.ts                : TypeScript interfaces for HealthKit data
 scripts/
-  parse-health-xml.js        : Stream 1.36GB export.xml → SQLite (366MB health.db)
+  parse-health-xml/          : Rust crate; streams 1.36GB export.xml → SQLite (366MB health.db)
+    src/{date,parser,schema,ingest}.rs : modules; tests in tests/<module>.rs (TDD)
+    src/main.rs              : clap CLI, default --db health.db, --fresh wipes DB
+  ingest.js                  : runs `cargo build --release` if needed, then the Rust binary, then generate-json.js
   generate-json.js           : SQLite → per-metric JSON files in public/data-*.json
 public/
   data-*.json                : Generated chart data (gitignored, privacy)
@@ -55,20 +59,22 @@ public/
 # 3. Place export.xml in project root
 ```
 
-### Ingest pipeline (two steps)
+### Ingest pipeline
 ```bash
-# Step 1: Parse XML → SQLite (handles 1.36GB, 3.68M records)
-node scripts/parse-health-xml.js export.xml
-
-# Step 2: Generate static JSON for dashboard
+# One command runs both steps; first invocation cargo-builds the Rust parser.
+npm run ingest export.xml
+# or, equivalently, the two raw steps:
+cargo run --release --manifest-path scripts/parse-health-xml/Cargo.toml -- export.xml
 node scripts/generate-json.js
 ```
 
 ### What happens
-1. `parse-health-xml.js` streams `export.xml` line-by-line → `health.db` (SQLite)
-   - Records table: type, value, unit, startDate, endDate, sourceName, device, UUID
-   - Workouts table: type, duration, startDate, endDate, sourceName, stats
-   - Sleep: calculated as duration hours from start/end dates
+1. The Rust binary at `scripts/parse-health-xml/` streams `export.xml` via quick-xml → `health.db` (SQLite)
+   - Records table: type, value, unit, start_date, end_date, source_name, date (generated)
+   - Workouts table: activity_type, duration, duration_unit, total_energy_kcal, total_distance, distance_unit, start_date, end_date, source_name, date
+   - Sleep: calculated as duration hours from start/end dates with timezone-aware parsing
+   - 50k-row batched inserts inside a transaction
+   - Incremental on re-run (MAX(start_date) cutoff per table); `--fresh` wipes the DB first
 2. `generate-json.js` reads SQLite → per-metric JSON files in `public/`
    - Aggregation: SUM for steps/calories, AVG for HR/weight, duration for sleep
    - Output: `data-stepcount.json`, `data-heartrate.json`, etc.
@@ -80,9 +86,24 @@ Repeat the two steps with a new `export.xml`. No git commits needed: data stays 
 ## Dev commands
 
 ```bash
-npm run dev      # localhost:4321 - HMR enabled
-npm run build    # production build → dist/ + .vercel/output/
+npm run dev               # localhost:4321 - HMR enabled
+npm run build             # production build → dist/ + .vercel/output/
+npm run ingest <xml>      # parse export.xml → SQLite → JSON
+npm run ingest:fresh <xml># same, but wipe health.db first
 ```
+
+## Rust parser commands (scripts/parse-health-xml/)
+
+```bash
+cd scripts/parse-health-xml
+cargo build --release     # cached artifact reused by npm run ingest
+cargo test                # 47 tests across date / parser / schema / ingest / cli
+cargo clippy
+cargo fmt
+```
+
+TDD: every module's tests live at `tests/<module>.rs` and were written before
+`src/<module>.rs`. See `## Testing` in `~/.claude/CLAUDE.md` for the universal rule.
 
 ## Data Privacy Rules
 
@@ -131,8 +152,17 @@ Parse script handles all record types and outputs clean SQLite tables.
 
 ## Key files for context
 
-- `scripts/parse-health-xml.js:1`: streaming XML parser (line-by-line, handles 1.36GB)
+- `scripts/parse-health-xml/src/ingest.rs:1`: streaming XML → batched SQLite inserts with cutoffs
+- `scripts/parse-health-xml/src/parser.rs:1`: quick-xml event walker → Record / Workout structs
+- `scripts/parse-health-xml/src/schema.rs:1`: SQLite DDL (matches the JS schema 1:1 for generate-json.js compatibility)
+- `scripts/ingest.js:1`: one-shot pipeline; builds the Rust binary on first run, then runs generate-json.js
 - `scripts/generate-json.js:1`: SQLite to JSON generator with proper aggregation
 - `src/components/HealthChart.tsx:1`: Recharts area chart with time range toggles
 - `src/styles/global.css:1`: Apple Health dark mode theme with Tailwind v4 `@theme`
 - `src/types/health.ts:1`: TypeScript interfaces and METRICS config array
+
+## Decisions
+
+- 2026-05-17: ported `scripts/parse-health-xml.js` (235 LOC of readline + regex) to Rust (~600 LOC across 4 modules + 47 tests). Motivation: quick-xml event parsing is dramatically faster than line-by-line regex on a 1.36 GB file, and rusqlite avoids the better-sqlite3 native-binding rebuild dance every time Node updates. SQLite schema is byte-identical so `generate-json.js` keeps working unchanged.
+- 2026-05-17: ingestion pipeline stays a `node scripts/ingest.js` entry point. Users get `npm run ingest` as before; the Rust binary is a build artifact, not a separate install. First invocation triggers `cargo build --release`, subsequent runs reuse the cached binary.
+- 2026-05-17: dropped unused npm deps `sax`, `xml-stream`, `xml2js` (residual from earlier parser experiments that the JS implementation never used).
