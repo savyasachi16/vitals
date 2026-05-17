@@ -2,6 +2,9 @@
 dist/
 .vercel/
 
+# rust build output (scripts/parse-health-xml/)
+target/
+
 # generated types
 .astro/
 

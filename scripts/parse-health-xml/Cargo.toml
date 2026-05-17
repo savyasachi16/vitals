@@ -1,0 +1,33 @@
+[package]
+name = "parse-health-xml"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Stream Apple Health export.xml into SQLite for the vitals dashboard"
+license = "MIT"
+publish = false
+
+[lib]
+name = "parse_health_xml"
+path = "src/lib.rs"
+
+[[bin]]
+name = "parse-health-xml"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+clap = { version = "4", features = ["derive"] }
+quick-xml = "0.36"
+rusqlite = { version = "0.32", features = ["bundled"] }
+thiserror = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+
+[profile.release]
+lto = true
+codegen-units = 1
